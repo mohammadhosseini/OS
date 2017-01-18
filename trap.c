@@ -48,11 +48,12 @@ trap(struct trapframe *tf)
 
   switch(tf->trapno){
   case T_IRQ0 + IRQ_TIMER:
+    if(proc && proc->state == RUNNING)
+    proc->rtime++;
     if(cpunum() == 0){
       acquire(&tickslock);
       ticks++;
-      if(proc && proc->state != ZOMBIE)
-	proc->rtime++;
+
       wakeup(&ticks);
       release(&tickslock);
     }

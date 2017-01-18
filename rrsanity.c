@@ -2,6 +2,7 @@
 #include "stat.h"
 #include "user.h"
 
+
 void mprint() {
     int i;
     int cnt = 100;
@@ -11,26 +12,25 @@ void mprint() {
     }
 }
 
-void rrsanitytest(void) {
-    int forkCount = 10;
-    int wTime[forkCount];
-    int rTime[forkCount];
-    int forkId;
 
-    int i;
-    for (i=0;i<forkCount;i++){
-        forkId = fork();
-        if(forkId == 0) {
+int main(void) {
+//    rrsanity();
+ //   exit();
+
+    int i=0;
+    for(i=0;i<10;i++){
+        int pid = fork();
+        if(pid<0){
+            printf(0,"fork creation failed!\n");
+        }else if(pid==0){
             mprint();
             exit();
         }
     }
-    while(wait() > 0){
-        printf(2, "PID : %d - Wait time : %d - Running time : %d - Turn Around time : %d.\n", getPerformanceData(&wTime[i], &rTime[i]), wTime[i], rTime[i], rTime[i] + wTime[i]);
+    for(int i=0;i<10;i++){
+        int temp_wtime;
+        int temp_rtime;
+        wait2(&temp_wtime,&temp_rtime);
+        printf(2, "PID : %d - wait time : %d - Running time : %d - Turn Around time : %d.\n", temp_wtime,temp_rtime,temp_wtime+temp_rtime);
     }
-}
-
-int main(void) {
-    rrsanitytest();
-    exit();
 }

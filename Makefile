@@ -173,8 +173,14 @@ UPROGS=\
 	_usertests\
 	_wc\
 	_zombie\
-	_getPerformanceData\
+	_getppid\
+	_wait2\
 	_parent\
+	_rrsanity\
+	_frrsanity\
+	_gsanity\
+	_sanitytest\
+	_nice\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)

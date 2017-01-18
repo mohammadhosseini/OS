@@ -96,18 +96,23 @@ extern int sys_sbrk(void);
 extern int sys_sleep(void);
 extern int sys_unlink(void);
 extern int sys_wait(void);
-extern int sys_secwait(void);
+extern int sys_wait2(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_getppid(void);
-extern int sys_getPerformanceData(void );
 extern int sys_rrsanity(void);
+extern int sys_frrsanity(void);
+extern int sys_printValid(void);
+extern int sys_gsanity(void);
+extern int sys_sanitytest(void);
+extern int sys_nice(void);
+
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
 [SYS_wait]    sys_wait,
-[SYS_secwait] sys_secwait,
+[SYS_wait2]   sys_wait2,
 [SYS_pipe]    sys_pipe,
 [SYS_read]    sys_read,
 [SYS_kill]    sys_kill,
@@ -127,13 +132,15 @@ static int (*syscalls[])(void) = {
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
 [SYS_getppid] sys_getppid,
-[SYS_getPerformanceData] sys_getPerformanceData,
 [SYS_rrsanity] sys_rrsanity,
+[SYS_frrsanity] sys_frrsanity,
+[SYS_printValid] sys_printValid,
+[SYS_gsanity] sys_gsanity,
+[SYS_sanitytest] sys_sanitytest,
+[SYS_nice] sys_nice,
 };
 
-void
-syscall(void)
-{
+void syscall(void){
   int num;
 
   num = proc->tf->eax;

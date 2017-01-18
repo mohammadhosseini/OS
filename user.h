@@ -5,6 +5,7 @@ struct rtcdate;
 int fork(void);
 int exit(void) __attribute__((noreturn));
 int wait(void);
+int wait2(int*,int*);
 int pipe(int*);
 int write(int, void*, int);
 int read(int, void*, int);
@@ -24,13 +25,15 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int getppid(void);
-int getperformancedata(int*, int*);
 int rrsanity(void);
+int frrsanity(void);
 int frrtest(void);
 int gsanity(void);
 int nice(void);
 int sanity(void);
 int printValid(void);
+int sanitytest(void);
+int nice(void);
 
 // ulib.c
 int stat(char*, struct stat*);

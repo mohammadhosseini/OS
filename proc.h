@@ -16,6 +16,10 @@ struct cpu {
 extern struct cpu cpus[NCPU];
 extern int ncpu;
 
+int flag;
+int wTime[10];
+int rTime[10];
+
 // Per-CPU variables, holding pointers to the
 // current cpu and to the current process.
 // The asm suffix tells gcc to use "%gs:0" to refer to cpu

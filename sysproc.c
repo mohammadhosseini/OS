@@ -13,10 +13,11 @@ sys_fork(void)
   return fork();
 }
 
-int
+/*int
 sys_getPerformanceData(void){
+
 	return secwait();
-}
+}*/
 
 int
 sys_exit(void)
@@ -32,10 +33,17 @@ sys_wait(void)
 }
 
 
-int sys_secwait(void)
+int sys_wait2(void)
 {
-    cprintf("SECWAIT");
-    return secwait();
+    int* A=0;
+    int* B=0;
+
+    argptr(0,(char **)A,sizeof(int));
+    argptr(1,(char **)B,sizeof(int));
+    cprintf("%d %d",*A,*B);
+    wait2(A,B);
+
+    return 1;
 }
 
 int
@@ -97,9 +105,7 @@ sys_sleep(void)
 
 // return how many clock tick interrupts have occurred
 // since start.
-int
-sys_uptime(void)
-{
+int sys_uptime(void){
   uint xticks;
 
   acquire(&tickslock);
@@ -108,8 +114,30 @@ sys_uptime(void)
   return xticks;
 }
 
-int
-sys_rrsanity()
-{
+int sys_rrsanity(){
+    return 0;
+}
+
+int sys_frrsanity(){
+    return 0;
+}
+
+
+int sys_printValid(){
+    flag = !flag;
+    return 0;
+}
+
+int sys_gsanity(){
+    return 0;
+}
+
+int sys_sanitytest(){
+    return 0;
+}
+
+int sys_nice(){
+    if(proc->priority>0)
+        proc->priority--;
     return 0;
 }

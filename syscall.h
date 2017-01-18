@@ -21,6 +21,10 @@
 #define SYS_mkdir  20
 #define SYS_close  21
 #define SYS_getppid 22
-#define SYS_getPerformanceData 23
+#define SYS_wait2 23
 #define SYS_rrsanity 24
-#define SYS_secwait 25
+#define SYS_frrsanity 25
+#define SYS_gsanity 26
+#define SYS_printValid 27
+#define SYS_sanitytest 28
+#define SYS_nice 29
