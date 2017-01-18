@@ -19,9 +19,14 @@ extern void forkret(void);
 extern void trapret(void);
 
 int ptr = -1;
+int mptr[] = {-1,-1,-1};
 
 static void wakeup1(void *chan);
 struct proc* processQueue[64];
+
+struct proc* processQueues[3][64];
+//struct proc* processQueue2[64];
+//struct proc* processQueue3[64];
 
 struct proc* qFront(){
 	return processQueue[ptr];
@@ -42,9 +47,30 @@ int isEmpty(){
 	return ptr==-1;
 }
 
+void mEnqueue(int which, struct proc* x){
+    processQueues[which][++mptr[which]] = x;
+}
+
+void mDequeue(int which, struct proc* x){
+    int i;
+    for(i=0;i<mptr[which];i++){
+        processQueues[which][i] = processQueues[which][i+1];
+    }
+    mptr[which]--;
+}
+
+int isEmptyMultiple(int which){
+    return mptr[which]==-1;
+}
+
 int isFull(){
 	return ptr==63;
 }
+
+int isFullMultiple(int which){
+    return mptr[which]==63;
+}
+
 
 void
 pinit(void)
@@ -298,6 +324,55 @@ wait(void)
   }
 }
 
+
+int
+secwait(void)
+{
+  struct proc *p;
+  int havekids, pid;
+
+  acquire(&ptable.lock);
+  for(;;){
+    // Scan through table looking for exited children.
+    havekids = 0;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->parent != proc)
+        continue;
+      havekids = 1;
+      if(p->state == ZOMBIE){
+        // Found one.
+        pid = p->pid;
+        kfree(p->kstack);
+        p->kstack = 0;
+        freevm(p->pgdir);
+        p->pid = 0;
+        p->parent = 0;
+        p->name[0] = 0;
+        p->killed = 0;
+        p->state = UNUSED;
+
+        char* wtime=0;
+        char* rtime=0;
+        argptr(0,&wtime,sizeof(int));
+        argptr(1,&rtime,sizeof(int));
+
+        *rtime = p->rtime;
+        *wtime = (ticks - p->ctime)-(p->rtime);
+
+        release(&ptable.lock);
+        return pid;
+      }
+    }
+  if(!havekids || proc->killed){
+    release(&ptable.lock);
+    return -1;
+  }
+  // Wait for children to exit.  (See wakeup1 call in proc_exit.)
+  sleep(proc, &ptable.lock);  //DOC: wait-sleep
+  }
+  return -1;
+}
+
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -315,24 +390,24 @@ void scheduler(void){
     sti();
     acquire(&ptable.lock);
     if(SCHEDFLAG==4){
-        if(!isEmpty1()){
+        if(!isEmptyMultiple(1)){
                 //acquire(&ptable.lock);
                 for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
                     if(ticks == p->ctime)
-                        p->cptime = 99999;
+                        p->priority = 99999;
                     else
-                        p->cptime = p->rtime/(ticks - p->cptime);
+                        p->priority = p->rtime/(ticks - p->priority);
                 }
                 //release(&ptable.lock);
                 struct proc * minprocess = ptable.proc;
                 float mincpt = 99999;
                 //acquire(&ptable.lock);
-                for(p = ptable.proc; p < &ptable.proc[NPROC] && isIncluded1(p); p++){
+                for(p = ptable.proc; p < &ptable.proc[NPROC] && p->which_queue==1; p++){
                     if (p->state != RUNNABLE)
                         continue;
-                    if(p->cptime <= mincpt){
+                    if(p->priority <= mincpt){
                         minprocess = p;
-                        mincpt = p->cptime;
+                        mincpt = p->priority;
                     }
                 }
                 //release(&ptable.lock);
@@ -368,35 +443,34 @@ void scheduler(void){
                 switchkvm();
                 proc=0;
                 */
-            }else if(!isEmpty2()){
+            }else if(!isEmptyMultiple(2)){
                // acquire(&ptable.lock);
-                for(p = ptable.proc; p < &ptable.proc[NPROC] && isIncluded2(p); p++){
+                for(p = ptable.proc; p < &ptable.proc[NPROC] && p->which_queue==2; p++){
                     if(p->state != RUNNABLE)
                         continue;
                     if(SCHEDFLAG==2){
-                        if(isEmpty() || p!=peek())
+                        if(isEmpty() || p!=qFront())
                             continue;
                         proc = p;
                         switchuvm(p);
                         p->state = RUNNING;
-                        removeData();
+                        dequeue();
+
                         swtch(&cpu->scheduler, p->context);
                         switchkvm();
                         proc=0;
                         if(p->state==RUNNABLE){
-                            insert(p);
-                            }
+                            enqueue(p);
                         }
+                    }
                 }
             }else{
-                 for(p = ptable.proc; p < &ptable.proc[NPROC] && isIncluded3(p); p++){
+                 for(p = ptable.proc; p < &ptable.proc[NPROC] && p->which_queue==3; p++){
                     if(p->state != RUNNABLE)
                         continue;
                     proc = p;
                     switchuvm(p);
                     p->state = RUNNING;
-                //if(!isEmpty())
-                //removeData();
                     swtch(&cpu->scheduler, p->context);
                     switchkvm();
 
@@ -405,15 +479,14 @@ void scheduler(void){
                     proc = 0;
                  }
             }
-    }
-    else if(SCHEDFLAG==3){
+    }else if(SCHEDFLAG==3){
 
 //acquire(&ptable.lock);
                 for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
                     if(ticks == p->ctime)
-                        p->cptime = 99999;
+                        p->priority = 99999;
                     else
-                        p->cptime = p->rtime/(ticks - p->cptime);
+                        p->priority = p->rtime/(ticks - p->priority);
                 }
                 //release(&ptable.lock);
                 struct proc * minprocess = ptable.proc;
@@ -422,9 +495,9 @@ void scheduler(void){
                 for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
                     if (p->state != RUNNABLE)
                         continue;
-                    if(p->cptime <= mincpt){
+                    if(p->priority <= mincpt){
                         minprocess = p;
-                        mincpt = p->cptime;
+                        mincpt = p->priority;
                     }
                 }
                 //release(&ptable.lock);
@@ -469,34 +542,29 @@ void scheduler(void){
             if(p->state != RUNNABLE)
                 continue;
 
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-        if(SCHEDFLAG==1 ){
-        proc = p;
-        switchuvm(p);
-        p->state = RUNNING;
-      //if(!isEmpty())
-      //removeData();
-        swtch(&cpu->scheduler, p->context);
-        switchkvm();
+          // Switch to chosen process.  It is the process's job
+          // to release ptable.lock and then reacquire it
+          // before jumping back to us.
+            if(SCHEDFLAG==1 ){
+                proc = p;
+                switchuvm(p);
+                p->state = RUNNING;
+                swtch(&cpu->scheduler, p->context);
+                switchkvm();
 
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-        proc = 0;
-        }else if(SCHEDFLAG==2){
-            if(isEmpty() || p!=peek())
-                continue;
-            proc = p;
-            switchuvm(p);
-            p->state = RUNNING;
-            removeData();
-            swtch(&cpu->scheduler, p->context);
-            switchkvm();
-            proc=0;
-        /*if(p->state==RUNNABLE){
-            insert(p);
-        }*/
+              // Process is done running for now.
+              // It should have changed its p->state before coming back.
+                proc = 0;
+            }else if(SCHEDFLAG==2){
+                if(isEmpty() || p!=qFront())
+                    continue;
+                proc = p;
+                switchuvm(p);
+                p->state = RUNNING;
+                dequeue();
+                swtch(&cpu->scheduler, p->context);
+                switchkvm();
+                proc=0;
 
             }
         }

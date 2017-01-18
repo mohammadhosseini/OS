@@ -24,7 +24,13 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int getppid(void);
-int getPerformanceData (int* , int* );
+int getperformancedata(int*, int*);
+int rrsanity(void);
+int frrtest(void);
+int gsanity(void);
+int nice(void);
+int sanity(void);
+int printValid(void);
 
 // ulib.c
 int stat(char*, struct stat*);

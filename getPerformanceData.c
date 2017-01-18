@@ -23,29 +23,27 @@ foo()
   sleep(20);
   for (i=0;i<100;i++)
      printf(2, "wait test %d\n",i);
-
 }
 
 void
 waittest(void)
 {
-  int wTime;
-  int rTime;
+ // int wTime;
+// int rTime;
   int pid;
   printf(1, "wait test\n");
-
 
     pid = fork();
     if(pid == 0)
     {
       foo();
-      exit();      
+      exit();
     }
-    getPerformanceData(&wTime,&rTime);
-     printf(1, "hi \n");
-    printf(1, "wTime: %d rTime: %d \n",wTime,rTime);
-
+    //getPerformanceData(&wTime,&rTime);
+    //printf(1, "hi \n");
+    //printf(1, "wTime: %d rTime: %d \n",wTime,rTime);
 }
+
 int
 main(void)
 {

@@ -12,16 +12,12 @@ sys_fork(void)
 {
   return fork();
 }
+
 int
 sys_getPerformanceData(void){
-	char* wtime;
-	char* rtime;
-	argstr(0, &wtime);
-	argstr(1, &rtime);
-	*wtime = ticks - proc ->ctime - proc ->rtime ;
-	*rtime = proc ->rtime;
-	return 0;
+	return secwait();
 }
+
 int
 sys_exit(void)
 {
@@ -33,6 +29,13 @@ int
 sys_wait(void)
 {
   return wait();
+}
+
+
+int sys_secwait(void)
+{
+    cprintf("SECWAIT");
+    return secwait();
 }
 
 int
@@ -51,7 +54,7 @@ sys_getpid(void)
   return proc->pid;
 }
 
-int 
+int
 sys_getppid(void)
 {
    return proc->parent->pid;
@@ -103,4 +106,10 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+int
+sys_rrsanity()
+{
+    return 0;
 }
